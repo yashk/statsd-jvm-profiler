@@ -4,7 +4,7 @@
 
     <groupId>com.etsy</groupId>
     <artifactId>statsd-jvm-profiler</artifactId>
-    <version>1.0.2-Redmart-SNAPSHOT</version>
+    <version>1.0.3-Redmart-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>statsd-jvm-profiler</name>
