@@ -31,21 +31,35 @@ import javax.management.ReflectionException;
 public class CPULoadProfiler extends Profiler {
 
   public static final long PERIOD = 10;
+
   private static final Map<String, String> ATTRIBUTES_MAP = ImmutableMap.of("ProcessCpuLoad", "cpu.jvm",
                                                                             "SystemCpuLoad",  "cpu.system");
 
-  private AttributeList list;
+  private static final String[] ATTRIBUTES = ATTRIBUTES_MAP.keySet().toArray(new String[ATTRIBUTES_MAP.size()]);
+
+  private final MBeanServer mbs;
+  private final ObjectName os;
 
   public CPULoadProfiler(Reporter reporter, Arguments arguments) {
     super(reporter, arguments);
-    try {
-      MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-      ObjectName os = ObjectName.getInstance("java.lang:type=OperatingSystem");
-      list = mbs.getAttributes(os, ATTRIBUTES_MAP.keySet().toArray(new String[ATTRIBUTES_MAP.size()]));
-    } catch (InstanceNotFoundException | ReflectionException | MalformedObjectNameException e) {
-      list = null;
-    }
+    mbs = getPlatformMBeanServer();
+    os = getOperatingSystem();
+  }
 
+  private MBeanServer getPlatformMBeanServer() {
+    try {
+      return ManagementFactory.getPlatformMBeanServer();
+    } catch (SecurityException e) {
+      return null;
+    }
+  }
+
+  private ObjectName getOperatingSystem() {
+    try {
+      return ObjectName.getInstance("java.lang:type=OperatingSystem");
+    } catch (MalformedObjectNameException e) {
+      return null;
+    }
   }
 
   /**
@@ -78,6 +92,17 @@ public class CPULoadProfiler extends Profiler {
    * Records all memory statistics
    */
   private void recordStats() {
+    if (os == null || mbs == null) {
+      return;
+    }
+
+    AttributeList list;
+    try {
+      list = mbs.getAttributes(os, ATTRIBUTES);
+    } catch (InstanceNotFoundException | ReflectionException e) {
+      return;
+    }
+
     if (list == null) {
       return;
     }
