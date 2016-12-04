@@ -37,6 +37,7 @@ public final class Arguments {
         server = parsedArgs.get(SERVER);
         port = Integer.parseInt(parsedArgs.get(PORT));
         metricsPrefix = Optional.fromNullable(parsedArgs.get(METRICS_PREFIX)).or("statsd-jvm-profiler");
+        metricsPrefix = metricsPrefix.replace("@taskid@", taskId());
         profilers = parseProfilerArg(parsedArgs.get(PROFILERS));
         reporter = parserReporterArg(parsedArgs.get(REPORTER));
         httpPort = Integer.parseInt(Optional.fromNullable(parsedArgs.get(HTTP_PORT)).or("5005"));
@@ -74,7 +75,7 @@ public final class Arguments {
 
         return new Arguments(parsed);
     }
-    
+
     @SuppressWarnings("unchecked")
     private static Class<? extends Reporter<?>> parserReporterArg(String reporterArg) {
         if (reporterArg == null) {
@@ -119,5 +120,22 @@ public final class Arguments {
         }
 
         return parsedProfilers;
+    }
+
+
+    private String taskId(){
+        try{
+            String logDir = System.getProperty("yarn.app.container.log.dir");
+            if(logDir == null || "".equals(logDir)){
+                return "";
+            }
+            List<String> firstSplit = Arrays.asList(logDir.split("/"));
+            String containerId = firstSplit.get(firstSplit.size()-1);
+            String jobId = Arrays.asList(containerId.split("_")).get(3);
+            return jobId;
+
+        }catch (Throwable t){
+            return "";
+        }
     }
 }
