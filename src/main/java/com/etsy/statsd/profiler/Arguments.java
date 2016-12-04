@@ -37,7 +37,8 @@ public final class Arguments {
         server = parsedArgs.get(SERVER);
         port = Integer.parseInt(parsedArgs.get(PORT));
         metricsPrefix = Optional.fromNullable(parsedArgs.get(METRICS_PREFIX)).or("statsd-jvm-profiler");
-        metricsPrefix = metricsPrefix.replace("@taskid@", taskId());
+        metricsPrefix = taskId(metricsPrefix);
+
         profilers = parseProfilerArg(parsedArgs.get(PROFILERS));
         reporter = parserReporterArg(parsedArgs.get(REPORTER));
         httpPort = Integer.parseInt(Optional.fromNullable(parsedArgs.get(HTTP_PORT)).or("5005"));
@@ -123,19 +124,19 @@ public final class Arguments {
     }
 
 
-    private String taskId(){
+    private String taskId(String metricsPrefix){
         try{
             String logDir = System.getProperty("yarn.app.container.log.dir");
             if(logDir == null || "".equals(logDir)){
-                return "";
+                return metricsPrefix;
             }
             List<String> firstSplit = Arrays.asList(logDir.split("/"));
             String containerId = firstSplit.get(firstSplit.size()-1);
             String jobId = Arrays.asList(containerId.split("_")).get(3);
-            return jobId;
+            return metricsPrefix.replace("@taskid@",jobId);
 
         }catch (Throwable t){
-            return "";
+            return metricsPrefix;
         }
     }
 }
